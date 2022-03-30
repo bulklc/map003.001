@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css"><link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css"><link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet-src.js"></script><script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="data/WardApplicabilityoutof50.js"></script>
+        <script src="data/ward_rank_001.js"></script>
+        <script src="data/OuterRingRoad1.js"></script>
+        <script>
+        
+        json_WardApplicabilityoutof50_ammended = json_WardApplicabilityoutof50;        
+        
+       
+        for (var ii = 0; ii < json_WardApplicabilityoutof50.features.length; ii++) { 
+       
+          for (var jj = 0; jj < json_ward_ranking.length; jj++) { 
+          
+             if (json_WardApplicabilityoutof50.features[ii].properties['Ward Number:'] == json_ward_ranking[jj].ward_no) {
+             
+                 json_WardApplicabilityoutof50.features[ii].properties.pop_density =
+                                      json_ward_ranking[jj].pop_density;      
+                                               
+                 json_WardApplicabilityoutof50.features[ii].properties.low_inc =
+                                      json_ward_ranking[jj].low_inc;
+                                      
+                 json_WardApplicabilityoutof50.features[ii].properties.water_qual =
+                                      json_ward_ranking[jj].water_qual;   
+                                      
+                 json_WardApplicabilityoutof50.features[ii].properties.pop_norm = 
+                                      json_ward_ranking[jj].pop_norm.toFixed(2);   
+             
+                 json_WardApplicabilityoutof50.features[ii].properties.water_norm =
+                                      json_ward_ranking[jj].water_norm.toFixed(2);
+                                      
+                 json_WardApplicabilityoutof50.features[ii].properties.inc_norm = 
+                                      json_ward_ranking[jj].inc_norm.toFixed(2);
+                                      
+                 json_WardApplicabilityoutof50.features[ii].properties.ward_rank =
+                                      json_ward_ranking[jj].ward_rank.toFixed(2);
+             
+               }
+           
+          
+            }
+       
+        }
+
+
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 0.6
+              });
+            }
+        }
+        var map = L.map('map', {
+            zoomControl:true, maxZoom:28, minZoom:11
+        })
+        var hash = new L.Hash(map);
+        map.attributionControl.addAttribution('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a>');
+        L.control.locate().addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        var basemap0 = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
+            maxZoom: 28
+        });
+        basemap0.addTo(map);
+        function setBounds() {
+            if (bounds_group.getLayers().length) {
+                map.fitBounds(bounds_group.getBounds());
+            }
+        }
+        function pop_WardApplicabilityoutof50(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Ward Name:</th>\
+                        <td>' + (feature.properties['Ward Name'] !== null ? Autolinker.link(String(feature.properties['Ward Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Ward Number:</th>\
+                        <td>' + (feature.properties['Ward Number:'] !== null ? Autolinker.link(String(feature.properties['Ward Number:'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Density (per sq km):</th>\
+                        <td>' + (feature.properties['pop_density'] !== null ? Autolinker.link(String(feature.properties['pop_density'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Percent Low Income:</th>\
+                        <td>' + (feature.properties['low_inc'] !== null ? Autolinker.link(String(feature.properties['low_inc'])) : '') + '%</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Water Quality Index:</th>\
+                        <td>' + (feature.properties['water_qual'] !== null ? Autolinker.link(String(feature.properties['water_qual'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Normalized Population:</th>\
+                        <td>' + (feature.properties['pop_norm'] !== null ? Autolinker.link(String(feature.properties['pop_norm'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Normalized Water Quality:</th>\
+                        <td>' + (feature.properties['water_norm'] !== null ? Autolinker.link(String(feature.properties['water_norm'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Normalized Income:</th>\
+                        <td>' + (feature.properties['inc_norm'] !== null ? Autolinker.link(String(feature.properties['inc_norm'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Ward Rank:</th>\
+                        <td>' + (feature.properties['ward_rank'] !== null ? Autolinker.link(String(feature.properties['ward_rank'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent);
+        }
+
+        function style_WardApplicabilityoutof50_0(feature) {
+            if (feature.properties['ward_rank'] > 9 && feature.properties['ward_rank'] <= 21 ) {
+                return {
+                pane: 'pane_WardApplicabilityoutof50',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.6)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 1,
+                fillColor: 'rgba(255,255,255,0.6)',
+            }
+            }
+            if (feature.properties['ward_rank'] > 21 && feature.properties['ward_rank'] <= 33 ) {
+                return {
+                pane: 'pane_WardApplicabilityoutof50',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.6)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 1,
+                fillColor: 'rgba(193,223,230,0.6)',
+            }
+            }
+            if (feature.properties['ward_rank'] > 33 && feature.properties['ward_rank'] <= 45 ) {
+                return {
+                pane: 'pane_WardApplicabilityoutof50',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.6)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 1,
+                fillColor: 'rgba(132,192,205,0.6)',
+            }
+            }
+            if (feature.properties['ward_rank'] > 45 && feature.properties['ward_rank'] <= 57 ) {
+                return {
+                pane: 'pane_WardApplicabilityoutof50',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.6)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 1,
+                fillColor: 'rgba(70,161,180,0.6)',
+            }
+            }
+            if (feature.properties['ward_rank'] > 57 && feature.properties['ward_rank'] <= 69 ) {
+                return {
+                pane: 'pane_WardApplicabilityoutof50',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.6)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 1,
+                fillColor: 'rgba(9,130,155,0.6)',
+            }
+            }
+        }
+        map.createPane('pane_WardApplicabilityoutof50');
+        map.getPane('pane_WardApplicabilityoutof50').style.zIndex = 400;
+        map.getPane('pane_WardApplicabilityoutof50').style['mix-blend-mode'] = 'normal';
+    var layer_WardApplicabilityoutof50 = new L.geoJson(json_WardApplicabilityoutof50_ammended, {
+        attribution: '<a href=""></a>',
+        pane: 'pane_WardApplicabilityoutof50',
+        onEachFeature: pop_WardApplicabilityoutof50,
+        style: style_WardApplicabilityoutof50_0,
+    });
+        bounds_group.addLayer(layer_WardApplicabilityoutof50);
+        map.addLayer(layer_WardApplicabilityoutof50);
+        function pop_OuterRingRoad1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent);
+        }
+
+        function style_OuterRingRoad1_0() {
+            return {
+                pane: 'pane_OuterRingRoad1',
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 2.0,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_OuterRingRoad1');
+        map.getPane('pane_OuterRingRoad1').style.zIndex = 401;
+        map.getPane('pane_OuterRingRoad1').style['mix-blend-mode'] = 'normal';
+    var layer_OuterRingRoad1 = new L.geoJson(json_OuterRingRoad1, {
+        attribution: '<a href=""></a>',
+        pane: 'pane_OuterRingRoad1',
+        onEachFeature: pop_OuterRingRoad1,
+        style: style_OuterRingRoad1_0,
+    });
+        bounds_group.addLayer(layer_OuterRingRoad1);
+        map.addLayer(layer_OuterRingRoad1);
+        var baseMaps = {};
+        L.control.layers(baseMaps,{'Ward Ranking<br /><table><tr><td style="text-align: center;"><img src="legend/WardApplicabilityoutof50_0001000.png" /></td><td> 9 - 21</td></tr><tr><td style="text-align: center;"><img src="legend/WardApplicabilityoutof50_1002001.png" /></td><td>21 - 33</td></tr><tr><td style="text-align: center;"><img src="legend/WardApplicabilityoutof50_2003002.png" /></td><td>33 - 45</td></tr><tr><td style="text-align: center;"><img src="legend/WardApplicabilityoutof50_3004003.png" /></td><td>45 - 57</td></tr><tr><td style="text-align: center;"><img src="legend/WardApplicabilityoutof50_4005004.png" /></td><td>57 - 69</td></tr></table>': layer_WardApplicabilityoutof50,'<img src="legend/OuterRingRoad1.png" /> Outer Ring Road': layer_OuterRingRoad1}, {collapsed:false}).addTo(map);
+        setBounds();
+        map.addControl(new L.Control.Search({
+            layer: layer_WardApplicabilityoutof50,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'Ward Name'}));
+        </script>
+    </body>
+</html>
